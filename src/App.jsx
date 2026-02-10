@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Login from "./components/Login"
 import Header from "./components/Header"
 import StatsCard from "./components/StatsCard"
@@ -12,22 +12,36 @@ export default function App() {
     localStorage.getItem("isLoggedIn") === "true"
   )
 
-  if (!isLoggedIn) {
-    return <Login onLogin={() => setIsLoggedIn(true)} />
-  }
-
-  // ================= DATE & VIEW =================
+  // ================= VIEW & DATE =================
   const [view, setView] = useState("daily")
 
   const today = new Date().toISOString().split("T")[0]
   const [selectedDate, setSelectedDate] = useState(today)
 
   // ================= ATTENDANCE STATE =================
-  const [attendanceByDate, setAttendanceByDate] = useState({
-    [today]: initialStudents.map(s => ({ ...s })),
+  const [attendanceByDate, setAttendanceByDate] = useState(() => {
+    const saved = localStorage.getItem("attendanceByDate")
+    if (saved) return JSON.parse(saved)
+
+    return {
+      [today]: initialStudents.map(s => ({ ...s })),
+    }
   })
 
+  // ================= PERSIST TO LOCAL STORAGE =================
+  useEffect(() => {
+    localStorage.setItem(
+      "attendanceByDate",
+      JSON.stringify(attendanceByDate)
+    )
+  }, [attendanceByDate])
+
+  // ================= DERIVED DATA =================
   const students = attendanceByDate[selectedDate] || []
+
+  const present = students.filter(s => s.status === "Present").length
+  const absent = students.filter(s => s.status === "Absent").length
+  const late = students.filter(s => s.status === "Late").length
 
   // ================= HANDLERS =================
   const handleChange = (roll, status) => {
@@ -49,10 +63,33 @@ export default function App() {
     }))
   }
 
-  // ================= STATS =================
-  const present = students.filter(s => s.status === "Present").length
-  const absent = students.filter(s => s.status === "Absent").length
-  const late = students.filter(s => s.status === "Late").length
+  const showTodayAttendance = () => {
+    alert(
+      `Date: ${selectedDate}\n` +
+      `Total Students: ${students.length}\n` +
+      `Present: ${present}\n` +
+      `Absent: ${absent}\n` +
+      `Late: ${late}`
+    )
+  }
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate)
+
+    setAttendanceByDate(prev => {
+      if (prev[newDate]) return prev
+
+      return {
+        ...prev,
+        [newDate]: initialStudents.map(s => ({ ...s })),
+      }
+    })
+  }
+
+  // ================= LOGIN CHECK =================
+  if (!isLoggedIn) {
+    return <Login onLogin={() => setIsLoggedIn(true)} />
+  }
 
   // ================= MONTHLY VIEW =================
   if (view === "monthly") {
@@ -83,10 +120,8 @@ export default function App() {
   // ================= DAILY VIEW =================
   return (
     <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
-      {/* Header */}
       <Header />
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-4 p-4">
         <StatsCard title="Total Students" count={students.length} borderColor="#3b82f6" />
         <StatsCard title="Present" count={present} borderColor="#22c55e" />
@@ -94,12 +129,8 @@ export default function App() {
         <StatsCard title="Late" count={late} borderColor="#f59e0b" />
       </div>
 
-      {/* Body */}
       <div className="flex flex-1 gap-4 p-4 overflow-hidden">
-        {/* Left panel */}
         <div className="w-1/3 bg-white p-4 rounded-xl shadow space-y-4 h-fit">
-
-          {/* Calendar */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Select Date
@@ -107,20 +138,11 @@ export default function App() {
             <input
               type="date"
               value={selectedDate}
-              onChange={(e) => {
-                const date = e.target.value
-                setSelectedDate(date)
-
-                setAttendanceByDate(prev => ({
-                  ...prev,
-                  [date]: prev[date] || initialStudents.map(s => ({ ...s })),
-                }))
-              }}
+              onChange={e => handleDateChange(e.target.value)}
               className="w-full border rounded px-3 py-2"
             />
           </div>
 
-          {/* All Present */}
           <button
             onClick={markAllPresent}
             className="w-full bg-green-500 text-white py-2 rounded"
@@ -128,7 +150,13 @@ export default function App() {
             All Present
           </button>
 
-          {/* Monthly */}
+          <button
+            onClick={showTodayAttendance}
+            className="w-full bg-gray-800 text-white py-2 rounded"
+          >
+            Today Attendance
+          </button>
+
           <button
             onClick={() => setView("monthly")}
             className="w-full bg-blue-500 text-white py-2 rounded"
@@ -137,7 +165,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Right panel – ONLY THIS SCROLLS */}
         <div className="w-2/3 h-full overflow-y-auto pr-2">
           {students.map(student => (
             <StudentItem

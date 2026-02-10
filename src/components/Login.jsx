@@ -5,11 +5,15 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  // 👇 allowed teachers
+  const users = {
+    teacher01: "1234",
+    teacher02: "5678",
+    teacher03: "4863",
+  }
 
-    // fake credentials
-    if (userId === "teacher01" && password === "1234") {
+  const handleLogin = () => {
+    if (users[userId] === password) {
       localStorage.setItem("isLoggedIn", "true")
       localStorage.setItem("userId", userId)
       onLogin()
@@ -19,27 +23,18 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow w-80"
-      >
-        <h2 className="text-2xl font-bold text-center mb-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-6 rounded-xl shadow w-80">
+        <h2 className="text-xl font-bold text-center mb-4">
           Teacher Login
         </h2>
-
-        {error && (
-          <p className="text-red-500 text-sm mb-2 text-center">
-            {error}
-          </p>
-        )}
 
         <input
           type="text"
           placeholder="User ID"
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
-          className="border p-2 w-full rounded mb-3"
+          className="w-full border px-3 py-2 rounded mb-3"
         />
 
         <input
@@ -47,16 +42,21 @@ export default function Login({ onLogin }) {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border p-2 w-full rounded mb-4"
+          className="w-full border px-3 py-2 rounded mb-3"
         />
 
+        {error && (
+          <p className="text-red-500 text-sm mb-2">{error}</p>
+        )}
+
         <button
-          type="submit"
+          onClick={handleLogin}
           className="w-full bg-blue-500 text-white py-2 rounded"
         >
           Login
         </button>
-      </form>
+
+      </div>
     </div>
   )
 }
