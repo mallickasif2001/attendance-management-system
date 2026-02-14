@@ -18,8 +18,9 @@ export default function Header() {
         <p>Attendance Management System</p>
         <p>Nabi Nagar Kakrar Hussainabad Road</p>
         <p>Sheikhpura 811105, Bihar</p>
-        <p className="text-sm mt-1">UKG - Section A</p>
+        <p className="text-sm mt-1"></p>
       </div>
+      
 
       {/* Right side – Profile */}
       <div className="relative">
@@ -32,6 +33,7 @@ export default function Header() {
           </div>
           <span className="text-sm">{userId}</span>
         </button>
+        
 
         {/* Dropdown */}
         {open && (
